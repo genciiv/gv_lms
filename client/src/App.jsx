@@ -1,34 +1,39 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
-import PublicLayout from "./layouts/PublicLayout.jsx";
-import DashboardLayout from "./layouts/DashboardLayout.jsx";
-import AdminLayout from "./layouts/AdminLayout.jsx";
+import PublicLayout from "./layouts/PublicLayout";
+import DashboardLayout from "./layouts/DashboardLayout";
+import AdminLayout from "./layouts/AdminLayout";
 
-import Home from "./pages/Home.jsx";
-import Courses from "./pages/Courses.jsx";
-import Blog from "./pages/Blog.jsx";
-import Contact from "./pages/Contact.jsx";
+import ProtectedRoute from "./auth/ProtectedRoute";
+import AdminRoute from "./auth/AdminRoute";
 
-import Login from "./pages/Login.jsx";
-import Register from "./pages/Register.jsx";
+/* Public pages */
+import Home from "./pages/Home";
+import Courses from "./pages/Courses";
+import Blog from "./pages/Blog";
+import Contact from "./pages/Contact";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 
-import DashboardHome from "./pages/dashboard/DashboardHome.jsx";
-import MyCourses from "./pages/dashboard/MyCourses.jsx";
-import Profile from "./pages/dashboard/Profile.jsx";
+/* User dashboard */
+import DashboardHome from "./pages/dashboard/DashboardHome";
+import MyCourses from "./pages/dashboard/MyCourses";
+import Profile from "./pages/dashboard/Profile";
 
-import AdminHome from "./pages/admin/AdminHome.jsx";
-import AdminUsers from "./pages/admin/AdminUsers.jsx";
-import AdminCourses from "./pages/admin/AdminCourses.jsx";
-import AdminPosts from "./pages/admin/AdminPosts.jsx";
-
-import ProtectedRoute from "./auth/ProtectedRoute.jsx";
-import AdminRoute from "./auth/AdminRoute.jsx";
+/* Admin */
+import AdminHome from "./pages/admin/AdminHome";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminCourses from "./pages/admin/AdminCourses";
+import AdminCourseForm from "./pages/admin/AdminCourseForm";
+import AdminLessons from "./pages/admin/AdminLessons";
+import AdminLessonForm from "./pages/admin/AdminLessonForm";
+import AdminPosts from "./pages/admin/AdminPosts";
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* PUBLIC */}
+        {/* ================= PUBLIC ================= */}
         <Route element={<PublicLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/courses" element={<Courses />} />
@@ -38,7 +43,7 @@ export default function App() {
           <Route path="/register" element={<Register />} />
         </Route>
 
-        {/* USER DASHBOARD */}
+        {/* ================= USER DASHBOARD ================= */}
         <Route
           path="/dashboard"
           element={
@@ -52,7 +57,7 @@ export default function App() {
           <Route path="profile" element={<Profile />} />
         </Route>
 
-        {/* ADMIN DASHBOARD */}
+        {/* ================= ADMIN DASHBOARD ================= */}
         <Route
           path="/admin"
           element={
@@ -63,11 +68,28 @@ export default function App() {
         >
           <Route index element={<AdminHome />} />
           <Route path="users" element={<AdminUsers />} />
+
+          {/* Courses */}
           <Route path="courses" element={<AdminCourses />} />
+          <Route path="courses/new" element={<AdminCourseForm />} />
+          <Route path="courses/:id" element={<AdminCourseForm />} />
+
+          {/* Lessons */}
+          <Route path="courses/:courseId/lessons" element={<AdminLessons />} />
+          <Route
+            path="courses/:courseId/lessons/new"
+            element={<AdminLessonForm />}
+          />
+          <Route
+            path="courses/:courseId/lessons/:lessonId"
+            element={<AdminLessonForm />}
+          />
+
+          {/* Blog */}
           <Route path="posts" element={<AdminPosts />} />
         </Route>
 
-        {/* FALLBACK */}
+        {/* ================= FALLBACK ================= */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
