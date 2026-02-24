@@ -10,6 +10,7 @@ import AdminRoute from "./auth/AdminRoute";
 /* Public pages */
 import Home from "./pages/Home";
 import Courses from "./pages/Courses";
+import CourseDetail from "./pages/CourseDetail";
 import Blog from "./pages/Blog";
 import Contact from "./pages/Contact";
 import Login from "./pages/Login";
@@ -19,6 +20,7 @@ import Register from "./pages/Register";
 import DashboardHome from "./pages/dashboard/DashboardHome";
 import MyCourses from "./pages/dashboard/MyCourses";
 import Profile from "./pages/dashboard/Profile";
+import CoursePlayer from "./pages/dashboard/CoursePlayer";
 
 /* Admin */
 import AdminHome from "./pages/admin/AdminHome";
@@ -37,6 +39,7 @@ export default function App() {
         <Route element={<PublicLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/courses" element={<Courses />} />
+          <Route path="/courses/:slug" element={<CourseDetail />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/login" element={<Login />} />
@@ -54,6 +57,7 @@ export default function App() {
         >
           <Route index element={<DashboardHome />} />
           <Route path="courses" element={<MyCourses />} />
+          <Route path="courses/:courseId" element={<CoursePlayer />} />
           <Route path="profile" element={<Profile />} />
         </Route>
 
