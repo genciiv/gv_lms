@@ -6,6 +6,7 @@ const authRoutes = require("./routes/authRoutes");
 const courseRoutes = require("./routes/courseRoutes");
 const lessonRoutes = require("./routes/lessonRoutes");
 const enrollRoutes = require("./routes/enrollRoutes");
+const postRoutes = require("./routes/postRoutes");
 
 const { notFound, errorHandler } = require("./middlewares/error");
 
@@ -27,6 +28,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/lessons", lessonRoutes);
 app.use("/api/enroll", enrollRoutes);
+app.use("/api/posts", postRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

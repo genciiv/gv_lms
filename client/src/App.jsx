@@ -12,6 +12,7 @@ import Home from "./pages/Home";
 import Courses from "./pages/Courses";
 import CourseDetail from "./pages/CourseDetail";
 import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
 import Contact from "./pages/Contact";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -30,6 +31,7 @@ import AdminCourseForm from "./pages/admin/AdminCourseForm";
 import AdminLessons from "./pages/admin/AdminLessons";
 import AdminLessonForm from "./pages/admin/AdminLessonForm";
 import AdminPosts from "./pages/admin/AdminPosts";
+import AdminPostForm from "./pages/admin/AdminPostForm";
 
 export default function App() {
   return (
@@ -41,6 +43,7 @@ export default function App() {
           <Route path="/courses" element={<Courses />} />
           <Route path="/courses/:slug" element={<CourseDetail />} />
           <Route path="/blog" element={<Blog />} />
+          <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -77,20 +80,14 @@ export default function App() {
           <Route path="courses" element={<AdminCourses />} />
           <Route path="courses/new" element={<AdminCourseForm />} />
           <Route path="courses/:id" element={<AdminCourseForm />} />
-
-          {/* Lessons */}
           <Route path="courses/:courseId/lessons" element={<AdminLessons />} />
-          <Route
-            path="courses/:courseId/lessons/new"
-            element={<AdminLessonForm />}
-          />
-          <Route
-            path="courses/:courseId/lessons/:lessonId"
-            element={<AdminLessonForm />}
-          />
+          <Route path="courses/:courseId/lessons/new" element={<AdminLessonForm />} />
+          <Route path="courses/:courseId/lessons/:lessonId" element={<AdminLessonForm />} />
 
-          {/* Blog */}
+          {/* Posts */}
           <Route path="posts" element={<AdminPosts />} />
+          <Route path="posts/new" element={<AdminPostForm />} />
+          <Route path="posts/:id" element={<AdminPostForm />} />
         </Route>
 
         {/* ================= FALLBACK ================= */}
