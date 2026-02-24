@@ -56,7 +56,9 @@ export default function MyCourses() {
               </div>
 
               <div className="progressWrap" style={{ marginTop: 12 }}>
-                <div className="muted small">Progress: <b>{x.progressPercent}%</b></div>
+                <div className="muted small">
+                  Progress: <b>{x.progressPercent}%</b>
+                </div>
                 <div className="bar">
                   <div className="barFill" style={{ width: `${x.progressPercent}%` }} />
                 </div>

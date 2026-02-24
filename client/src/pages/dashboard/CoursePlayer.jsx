@@ -8,6 +8,7 @@ export default function CoursePlayer() {
   const [course, setCourse] = useState(null);
   const [lessons, setLessons] = useState([]);
   const [access, setAccess] = useState("preview"); // preview | enrolled | admin
+
   const [activeId, setActiveId] = useState("");
   const [completedIds, setCompletedIds] = useState(new Set());
 
@@ -18,28 +19,37 @@ export default function CoursePlayer() {
   async function loadAll() {
     setLoading(true);
     setErr("");
-    try {
-      // course info (admin/unpublished not needed here; enrolled users will access)
-      const courseRes = await api.get(`/api/courses`).catch(() => ({ data: { items: [] } }));
-      const found = (courseRes.data.items || []).find((x) => x._id === courseId);
-      // fallback: course detail by slug not available here; we just show minimal if not found
-      setCourse(found || { _id: courseId, title: "Course" });
 
+    try {
+      // 1) Lessons list + access
       const lRes = await api.get(`/api/lessons/by-course/${courseId}`);
-      setLessons(lRes.data.lessons || []);
+      const list = lRes.data.lessons || [];
+      setLessons(list);
       setAccess(lRes.data.access || "preview");
 
-      const first = (lRes.data.lessons || [])[0];
-      if (first) setActiveId(first._id);
-
-      // load completed from enrollments
-      const myRes = await api.get("/api/enroll/my");
-      const enrollment = (myRes.data.items || []).find((x) => x.course?._id === courseId);
-      if (enrollment) {
-        // we don’t have lessonIds from API myEnrollments; so we infer completion from percent only
-        // but completion needs IDs -> we mark locally after clicking.
-        // (When you want exact completion IDs, we’ll add endpoint in Hapi 4D.)
+      // If preview -> stop here
+      if ((lRes.data.access || "preview") === "preview") {
+        setCourse({ _id: courseId, title: "Course" });
+        setActiveId(list[0]?._id || "");
+        setLoading(false);
+        return;
       }
+
+      // 2) Course title (admin list includes all; user list includes published)
+      // This is a lightweight way to show title; later we can add GET course by id endpoint.
+      const cRes = await api.get("/api/courses");
+      const found = (cRes.data.items || []).find((x) => x._id === courseId);
+      setCourse(found || { _id: courseId, title: "Course" });
+
+      // 3) REAL progress state
+      const sRes = await api.get(`/api/enroll/status/${courseId}`);
+      const completed = new Set(sRes.data.completedLessonIds || []);
+      setCompletedIds(completed);
+
+      // 4) Continue from last lesson (if exists), else first lesson
+      const lastId = sRes.data.lastLessonId;
+      const hasLast = lastId && list.some((l) => l._id === lastId);
+      setActiveId(hasLast ? lastId : (list[0]?._id || ""));
     } catch (e) {
       setErr(e?.response?.data?.message || "Failed to load course player");
     } finally {
@@ -62,8 +72,13 @@ export default function CoursePlayer() {
     setSaving(true);
     setErr("");
     try {
-      await api.post("/api/enroll/complete", { courseId, lessonId: active._id });
-      setCompletedIds((prev) => new Set(prev).add(active._id));
+      const res = await api.post("/api/enroll/complete", {
+        courseId,
+        lessonId: active._id
+      });
+
+      const ids = res.data.completedLessonIds || [];
+      setCompletedIds(new Set(ids));
     } catch (e) {
       setErr(e?.response?.data?.message || "Failed to mark completed");
     } finally {
@@ -78,7 +93,7 @@ export default function CoursePlayer() {
       <div className="card">
         <div className="title">Locked content</div>
         <div className="muted" style={{ marginTop: 8 }}>
-          You are not enrolled. Go back to course details and enroll.
+          You are not enrolled. Go to course details and enroll.
         </div>
         <div style={{ marginTop: 12 }}>
           <Link className="btn" to="/courses">Browse Courses →</Link>
@@ -92,7 +107,9 @@ export default function CoursePlayer() {
       <aside className="playerSide">
         <div className="playerHead">
           <div className="title">{course?.title || "Course"}</div>
-          <div className="muted small">Lessons: {lessons.length}</div>
+          <div className="muted small">
+            Lessons: {lessons.length} • Completed: {completedIds.size}
+          </div>
         </div>
 
         <div className="playerList">
@@ -136,7 +153,8 @@ export default function CoursePlayer() {
                 {active?.order}. {active?.title}
               </div>
               <div className="muted small">
-                Type: {active?.contentType}
+                Type: {active?.contentType}{" "}
+                {completedIds.has(active?._id) ? "• ✅ Completed" : ""}
               </div>
             </div>
 
@@ -150,10 +168,13 @@ export default function CoursePlayer() {
               active?.videoUrl ? (
                 <div className="videoBox">
                   <div className="muted small">
-                    Video URL: <a href={active.videoUrl} target="_blank" rel="noreferrer">{active.videoUrl}</a>
+                    Video URL:{" "}
+                    <a href={active.videoUrl} target="_blank" rel="noreferrer">
+                      {active.videoUrl}
+                    </a>
                   </div>
                   <div className="muted" style={{ marginTop: 10 }}>
-                    (Në Hapin 6 e vendosim player-in e videos real me embed.)
+                    (Më pas e bëjmë embed player real.)
                   </div>
                 </div>
               ) : (

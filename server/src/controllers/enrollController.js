@@ -12,7 +12,10 @@ async function enroll(req, res) {
 
   const enrollment = await Enrollment.findOneAndUpdate(
     { userId: req.user._id, courseId },
-    { $setOnInsert: { userId: req.user._id, courseId, progress: [] }, $set: { lastAccessAt: new Date() } },
+    {
+      $setOnInsert: { userId: req.user._id, courseId, progress: [], lastLessonId: null },
+      $set: { lastAccessAt: new Date() }
+    },
     { upsert: true, new: true }
   );
 
@@ -27,7 +30,7 @@ async function myEnrollments(req, res) {
 
   const mapped = await Promise.all(
     items
-      .filter((x) => x.courseId) // safety
+      .filter((x) => x.courseId)
       .map(async (x) => {
         const totalLessons = await Lesson.countDocuments({ courseId: x.courseId._id });
         const completed = x.progress?.length || 0;
@@ -39,6 +42,8 @@ async function myEnrollments(req, res) {
           completedLessons: completed,
           totalLessons,
           progressPercent: percent,
+          completedLessonIds: (x.progress || []).map((p) => String(p.lessonId)),
+          lastLessonId: x.lastLessonId ? String(x.lastLessonId) : null,
           startedAt: x.startedAt,
           lastAccessAt: x.lastAccessAt
         };
@@ -46,6 +51,25 @@ async function myEnrollments(req, res) {
   );
 
   return res.json({ items: mapped });
+}
+
+/**
+ * Status endpoint (for player):
+ * returns enrollment progress + completed IDs + last lesson id
+ */
+async function status(req, res) {
+  const { courseId } = req.params;
+
+  const enrollment = await Enrollment.findOne({ userId: req.user._id, courseId }).lean();
+  if (!enrollment) return res.status(404).json({ message: "Not enrolled" });
+
+  return res.json({
+    courseId,
+    completedLessonIds: (enrollment.progress || []).map((p) => String(p.lessonId)),
+    lastLessonId: enrollment.lastLessonId ? String(enrollment.lastLessonId) : null,
+    completedCount: enrollment.progress?.length || 0,
+    lastAccessAt: enrollment.lastAccessAt
+  });
 }
 
 async function completeLesson(req, res) {
@@ -62,10 +86,16 @@ async function completeLesson(req, res) {
   if (!already) {
     enrollment.progress.push({ lessonId, completedAt: new Date() });
   }
+
+  enrollment.lastLessonId = lessonId;
   enrollment.lastAccessAt = new Date();
   await enrollment.save();
 
-  return res.json({ ok: true });
+  return res.json({
+    ok: true,
+    completedLessonIds: enrollment.progress.map((p) => String(p.lessonId)),
+    lastLessonId: enrollment.lastLessonId ? String(enrollment.lastLessonId) : null
+  });
 }
 
-module.exports = { enroll, myEnrollments, completeLesson };
+module.exports = { enroll, myEnrollments, status, completeLesson };
