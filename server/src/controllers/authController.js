@@ -9,14 +9,9 @@ function isValidEmail(email) {
 async function register(req, res) {
   const { name, email, password } = req.body;
 
-  if (!name || !email || !password)
-    return res.status(400).json({ message: "Missing fields" });
-
-  if (!isValidEmail(email))
-    return res.status(400).json({ message: "Invalid email" });
-
-  if (password.length < 6)
-    return res.status(400).json({ message: "Password must be at least 6 chars" });
+  if (!name || !email || !password) return res.status(400).json({ message: "Missing fields" });
+  if (!isValidEmail(email)) return res.status(400).json({ message: "Invalid email" });
+  if (password.length < 6) return res.status(400).json({ message: "Password must be at least 6 chars" });
 
   const exists = await User.findOne({ email: email.toLowerCase() });
   if (exists) return res.status(409).json({ message: "Email already used" });
@@ -26,23 +21,21 @@ async function register(req, res) {
   const user = await User.create({
     name: name.trim(),
     email: email.toLowerCase(),
-    passwordHash,
-    role: "user",
+    passwordHash
   });
 
   const token = signToken({ id: user._id });
 
   return res.status(201).json({
     token,
-    user: { id: user._id, name: user.name, email: user.email, role: user.role },
+    user: { id: user._id, name: user.name, email: user.email, role: user.role }
   });
 }
 
 async function login(req, res) {
   const { email, password } = req.body;
 
-  if (!email || !password)
-    return res.status(400).json({ message: "Missing fields" });
+  if (!email || !password) return res.status(400).json({ message: "Missing fields" });
 
   const user = await User.findOne({ email: email.toLowerCase() });
   if (!user) return res.status(401).json({ message: "Invalid credentials" });
@@ -55,7 +48,7 @@ async function login(req, res) {
 
   return res.json({
     token,
-    user: { id: user._id, name: user.name, email: user.email, role: user.role },
+    user: { id: user._id, name: user.name, email: user.email, role: user.role }
   });
 }
 

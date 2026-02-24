@@ -8,7 +8,7 @@ const userSchema = new mongoose.Schema(
     role: { type: String, enum: ["user", "admin"], default: "user" },
     avatar: { type: String, default: "" },
     bio: { type: String, default: "" },
-    isBlocked: { type: Boolean, default: false },
+    isBlocked: { type: Boolean, default: false }
   },
   { timestamps: true }
 );
