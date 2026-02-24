@@ -37,7 +37,6 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* ================= PUBLIC ================= */}
         <Route element={<PublicLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/courses" element={<Courses />} />
@@ -49,7 +48,6 @@ export default function App() {
           <Route path="/register" element={<Register />} />
         </Route>
 
-        {/* ================= USER DASHBOARD ================= */}
         <Route
           path="/dashboard"
           element={
@@ -64,7 +62,6 @@ export default function App() {
           <Route path="profile" element={<Profile />} />
         </Route>
 
-        {/* ================= ADMIN DASHBOARD ================= */}
         <Route
           path="/admin"
           element={
@@ -76,7 +73,6 @@ export default function App() {
           <Route index element={<AdminHome />} />
           <Route path="users" element={<AdminUsers />} />
 
-          {/* Courses */}
           <Route path="courses" element={<AdminCourses />} />
           <Route path="courses/new" element={<AdminCourseForm />} />
           <Route path="courses/:id" element={<AdminCourseForm />} />
@@ -84,13 +80,11 @@ export default function App() {
           <Route path="courses/:courseId/lessons/new" element={<AdminLessonForm />} />
           <Route path="courses/:courseId/lessons/:lessonId" element={<AdminLessonForm />} />
 
-          {/* Posts */}
           <Route path="posts" element={<AdminPosts />} />
           <Route path="posts/new" element={<AdminPostForm />} />
           <Route path="posts/:id" element={<AdminPostForm />} />
         </Route>
 
-        {/* ================= FALLBACK ================= */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

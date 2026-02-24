@@ -16,15 +16,49 @@ async function ensureUniqueSlug(baseSlug) {
   }
 }
 
-/* PUBLIC */
+function normalizeTags(tags) {
+  if (!Array.isArray(tags)) return [];
+  return tags
+    .map((t) => String(t || "").trim())
+    .filter(Boolean)
+    .slice(0, 20);
+}
+
+/* PUBLIC: list with pagination + search + tag filter + featured */
 async function listPublished(req, res) {
-  const q = { isPublished: true };
-  const items = await Post.find(q)
-    .sort({ createdAt: -1 })
+  const page = Math.max(1, parseInt(req.query.page || "1", 10));
+  const limit = Math.min(24, Math.max(1, parseInt(req.query.limit || "9", 10)));
+  const q = String(req.query.q || "").trim();
+  const tag = String(req.query.tag || "").trim();
+
+  const filter = { isPublished: true };
+  if (tag) filter.tags = tag;
+
+  // Prefer text search if q exists, else normal find
+  const findQuery = q ? { ...filter, $text: { $search: q } } : filter;
+
+  const total = await Post.countDocuments(findQuery);
+  const pages = Math.max(1, Math.ceil(total / limit));
+  const skip = (page - 1) * limit;
+
+  const items = await Post.find(findQuery, q ? { score: { $meta: "textScore" } } : undefined)
+    .sort(q ? { score: { $meta: "textScore" }, createdAt: -1 } : { createdAt: -1 })
+    .skip(skip)
+    .limit(limit)
+    .select("title slug excerpt coverImage tags isFeatured createdAt updatedAt")
+    .lean();
+
+  const featured = await Post.find({ isPublished: true, isFeatured: true })
+    .sort({ updatedAt: -1 })
+    .limit(6)
     .select("title slug excerpt coverImage tags createdAt updatedAt")
     .lean();
 
-  return res.json({ items });
+  return res.json({
+    items,
+    featured,
+    meta: { page, limit, total, pages, q, tag }
+  });
 }
 
 async function getPublishedBySlug(req, res) {
@@ -47,7 +81,7 @@ async function getPublishedBySlug(req, res) {
 async function adminList(req, res) {
   const items = await Post.find({})
     .sort({ createdAt: -1 })
-    .select("title slug excerpt isPublished createdAt updatedAt")
+    .select("title slug excerpt isFeatured isPublished createdAt updatedAt")
     .lean();
 
   return res.json({ items });
@@ -61,7 +95,7 @@ async function adminGetById(req, res) {
 }
 
 async function adminCreate(req, res) {
-  const { title, excerpt = "", content = "", coverImage = "", tags = [], isPublished = false } = req.body;
+  const { title, excerpt = "", content = "", coverImage = "", tags = [], isFeatured = false, isPublished = false } = req.body;
 
   if (!title || String(title).trim().length < 3) {
     return res.status(400).json({ message: "Title required (min 3 chars)" });
@@ -77,7 +111,8 @@ async function adminCreate(req, res) {
     excerpt,
     content,
     coverImage,
-    tags: Array.isArray(tags) ? tags : [],
+    tags: normalizeTags(tags),
+    isFeatured: !!isFeatured,
     isPublished: !!isPublished,
     createdBy: req.user._id
   });
@@ -87,7 +122,7 @@ async function adminCreate(req, res) {
 
 async function adminUpdate(req, res) {
   const { id } = req.params;
-  const { title, excerpt, content, coverImage, tags, isPublished } = req.body;
+  const { title, excerpt, content, coverImage, tags, isFeatured, isPublished } = req.body;
 
   const post = await Post.findById(id);
   if (!post) return res.status(404).json({ message: "Post not found" });
@@ -101,7 +136,8 @@ async function adminUpdate(req, res) {
   if (typeof excerpt === "string") post.excerpt = excerpt;
   if (typeof content === "string") post.content = content;
   if (typeof coverImage === "string") post.coverImage = coverImage;
-  if (Array.isArray(tags)) post.tags = tags;
+  if (Array.isArray(tags)) post.tags = normalizeTags(tags);
+  if (typeof isFeatured === "boolean") post.isFeatured = isFeatured;
   if (typeof isPublished === "boolean") post.isPublished = isPublished;
 
   await post.save();

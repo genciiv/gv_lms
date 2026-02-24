@@ -1,18 +1,21 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api } from "../../api";
 import { useNavigate, useParams } from "react-router-dom";
+import { renderMarkdown } from "../../lib/markdown";
 
 export default function AdminPostForm() {
   const { id } = useParams();
   const nav = useNavigate();
   const isNew = id === "new";
 
+  const [tab, setTab] = useState("edit"); // edit | preview
   const [form, setForm] = useState({
     title: "",
     excerpt: "",
     content: "",
     coverImage: "",
     tagsText: "",
+    isFeatured: false,
     isPublished: false
   });
 
@@ -34,6 +37,7 @@ export default function AdminPostForm() {
           content: p.content || "",
           coverImage: p.coverImage || "",
           tagsText: Array.isArray(p.tags) ? p.tags.join(", ") : "",
+          isFeatured: !!p.isFeatured,
           isPublished: !!p.isPublished
         });
       } catch (e) {
@@ -43,6 +47,8 @@ export default function AdminPostForm() {
       }
     })();
   }, [id, isNew]);
+
+  const previewHtml = useMemo(() => renderMarkdown(form.content), [form.content]);
 
   async function submit(e) {
     e.preventDefault();
@@ -59,6 +65,7 @@ export default function AdminPostForm() {
       content: form.content,
       coverImage: form.coverImage,
       tags,
+      isFeatured: form.isFeatured,
       isPublished: form.isPublished
     };
 
@@ -78,7 +85,19 @@ export default function AdminPostForm() {
 
   return (
     <div className="card">
-      <h2 className="h2">{isNew ? "New Post" : "Edit Post"}</h2>
+      <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+        <h2 className="h2">{isNew ? "New Post" : "Edit Post"}</h2>
+
+        <div className="row">
+          <button type="button" className={`btn btnGhost ${tab === "edit" ? "activeBtn" : ""}`} onClick={() => setTab("edit")}>
+            Edit
+          </button>
+          <button type="button" className={`btn btnGhost ${tab === "preview" ? "activeBtn" : ""}`} onClick={() => setTab("preview")}>
+            Preview
+          </button>
+        </div>
+      </div>
+
       {err && <div className="alert">{err}</div>}
 
       <form className="form" onSubmit={submit}>
@@ -92,17 +111,9 @@ export default function AdminPostForm() {
 
         <input
           className="input"
-          placeholder="Excerpt"
+          placeholder="Excerpt (short summary)"
           value={form.excerpt}
           onChange={(e) => setForm({ ...form, excerpt: e.target.value })}
-        />
-
-        <textarea
-          className="input"
-          rows="10"
-          placeholder="Content"
-          value={form.content}
-          onChange={(e) => setForm({ ...form, content: e.target.value })}
         />
 
         <input
@@ -119,14 +130,43 @@ export default function AdminPostForm() {
           onChange={(e) => setForm({ ...form, tagsText: e.target.value })}
         />
 
-        <label className="muted small">
-          <input
-            type="checkbox"
-            checked={form.isPublished}
-            onChange={(e) => setForm({ ...form, isPublished: e.target.checked })}
-          />{" "}
-          Published
-        </label>
+        <div className="row" style={{ gap: 18, flexWrap: "wrap" }}>
+          <label className="muted small">
+            <input
+              type="checkbox"
+              checked={form.isFeatured}
+              onChange={(e) => setForm({ ...form, isFeatured: e.target.checked })}
+            />{" "}
+            Featured
+          </label>
+
+          <label className="muted small">
+            <input
+              type="checkbox"
+              checked={form.isPublished}
+              onChange={(e) => setForm({ ...form, isPublished: e.target.checked })}
+            />{" "}
+            Published
+          </label>
+        </div>
+
+        {tab === "edit" ? (
+          <textarea
+            className="input"
+            rows="14"
+            placeholder="Write content in Markdown..."
+            value={form.content}
+            onChange={(e) => setForm({ ...form, content: e.target.value })}
+          />
+        ) : (
+          <div className="card" style={{ boxShadow: "none" }}>
+            <div className="md" dangerouslySetInnerHTML={{ __html: previewHtml }} />
+          </div>
+        )}
+
+        <div className="muted small">
+          Markdown tips: <b>**bold**</b>, <b># Heading</b>, <b>- list</b>, <b>[link](https://...)</b>, <b>`code`</b>
+        </div>
 
         <button className="btn">Save</button>
       </form>

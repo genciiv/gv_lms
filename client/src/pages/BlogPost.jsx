@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api } from "../api";
 import { Link, useParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { renderMarkdown } from "../lib/markdown";
 
 export default function BlogPost() {
   const { slug } = useParams();
@@ -35,6 +36,8 @@ export default function BlogPost() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 
+  const html = useMemo(() => renderMarkdown(post?.content || ""), [post?.content]);
+
   async function submitComment(e) {
     e.preventDefault();
     setMsg("");
@@ -44,7 +47,6 @@ export default function BlogPost() {
       setErr("Please login to comment.");
       return;
     }
-
     if (!post?._id) return;
     if (!text.trim()) return;
 
@@ -79,16 +81,27 @@ export default function BlogPost() {
         <div>
           <div className="kicker">Blog</div>
           <h1 className="h2" style={{ marginTop: 6 }}>{post.title}</h1>
-          {post.excerpt && <p className="muted" style={{ maxWidth: 860 }}>{post.excerpt}</p>}
+          <div className="muted small">
+            By <b>{post.createdBy?.name || "Admin"}</b> • {new Date(post.createdAt).toLocaleDateString()}
+          </div>
+
+          {(post.tags || []).length > 0 && (
+            <div className="tagRow" style={{ marginTop: 10 }}>
+              {(post.tags || []).map((t) => (
+                <span key={t} className="tagPill">{t}</span>
+              ))}
+            </div>
+          )}
+
+          {post.excerpt && <p className="muted" style={{ maxWidth: 860, marginTop: 10 }}>{post.excerpt}</p>}
         </div>
         <Link className="btn btnGhost" to="/blog">Back</Link>
       </div>
 
+      <div className="postCover" style={{ backgroundImage: post.coverImage ? `url(${post.coverImage})` : undefined }} />
+
       <div className="card" style={{ marginTop: 12 }}>
-        <div className="muted small">Content</div>
-        <div className="lessonText" style={{ marginTop: 10 }}>
-          {post.content || "No content"}
-        </div>
+        <div className="md" dangerouslySetInnerHTML={{ __html: html }} />
       </div>
 
       <div className="section">
@@ -116,9 +129,7 @@ export default function BlogPost() {
             <button className="btn" disabled={!isAuthed || sending || !text.trim()}>
               {sending ? "Sending..." : "Submit Comment"}
             </button>
-            <div className="muted small">
-              Your comment will be visible after admin approval.
-            </div>
+            <div className="muted small">Your comment will be visible after admin approval.</div>
           </form>
         </div>
 
@@ -127,10 +138,13 @@ export default function BlogPost() {
             <div className="muted">No comments yet.</div>
           ) : (
             comments.map((c, idx) => (
-              <div key={idx} className="lessonRow" style={{ alignItems: "flex-start" }}>
+              <div key={idx} className="commentRow">
+                <div className="commentAvatar" />
                 <div>
-                  <div className="title" style={{ fontSize: 14 }}>{c.name}</div>
-                  <div className="muted small">{new Date(c.createdAt).toLocaleString()}</div>
+                  <div className="row" style={{ justifyContent: "space-between" }}>
+                    <div className="title" style={{ fontSize: 14 }}>{c.name}</div>
+                    <div className="muted small">{new Date(c.createdAt).toLocaleString()}</div>
+                  </div>
                   <div className="lessonText" style={{ marginTop: 8 }}>{c.text}</div>
                 </div>
               </div>
